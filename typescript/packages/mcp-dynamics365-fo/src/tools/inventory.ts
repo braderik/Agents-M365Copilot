@@ -209,7 +209,7 @@ export async function handleInventoryTool(
       const a = GetItemSchema.parse(args);
       try {
         const key: Record<string, string> = { ItemNumber: a.itemNumber };
-        if (a.dataAreaId) key.DataAreaId = a.dataAreaId;
+        if (a.dataAreaId) key.dataAreaId = a.dataAreaId;
         const result = await client.getByKey("ReleasedProductsV2", key);
         return { type: "text", text: JSON.stringify(result, null, 2) };
       } catch (err) {
@@ -225,7 +225,7 @@ export async function handleInventoryTool(
       if (a.siteId) filters.push(`InventSiteId eq '${a.siteId}'`);
       if (a.minQty !== undefined) filters.push(`AvailablePhysicalQuantity ge ${a.minQty}`);
       if (a.dataAreaId) filters.push(`DataAreaId eq '${a.dataAreaId}'`);
-      return runQuery(client, "InventoryOnHandEntries", {
+      return runQuery(client, "InventoryOnHandV3", {
         filter: mergeFilters(...filters),
         top: a.top,
         crossCompany: !a.dataAreaId,
@@ -254,7 +254,7 @@ export async function handleInventoryTool(
       if (a.dateFrom) filters.push(`TransactionDate ge ${a.dateFrom}`);
       if (a.dateTo) filters.push(`TransactionDate le ${a.dateTo}`);
       if (a.dataAreaId) filters.push(`DataAreaId eq '${a.dataAreaId}'`);
-      return runQuery(client, "InventoryTransactions", {
+      return runQuery(client, "InventoryTransactionEntities", {
         filter: mergeFilters(...filters),
         top: a.top,
         crossCompany: !a.dataAreaId,

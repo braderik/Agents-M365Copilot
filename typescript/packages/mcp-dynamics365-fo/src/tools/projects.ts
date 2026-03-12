@@ -217,7 +217,7 @@ export async function handleProjectsTool(
       const a = GetProjectSchema.parse(args);
       try {
         const key: Record<string, string> = { ProjectId: a.projectId };
-        if (a.dataAreaId) key.DataAreaId = a.dataAreaId;
+        if (a.dataAreaId) key.dataAreaId = a.dataAreaId;
         const result = await client.getByKey("Projects", key);
         return { type: "text", text: JSON.stringify(result, null, 2) };
       } catch (err) {
@@ -235,7 +235,7 @@ export async function handleProjectsTool(
       if (a.workerId) filters.push(`WorkerPersonnelNumber eq '${a.workerId}'`);
       if (a.categoryId) filters.push(`CategoryId eq '${a.categoryId}'`);
       if (a.dataAreaId) filters.push(`DataAreaId eq '${a.dataAreaId}'`);
-      return runQuery(client, "ProjectTransactions", {
+      return runQuery(client, "ProjectTransactionDetailsEntity", {
         filter: mergeFilters(...filters),
         top: a.top,
         crossCompany: !a.dataAreaId,
@@ -280,7 +280,7 @@ export async function handleProjectsTool(
       if (a.contractId) filters.push(`ContractId eq '${a.contractId}'`);
       if (a.customerAccount) filters.push(`CustomerAccountNumber eq '${a.customerAccount}'`);
       if (a.dataAreaId) filters.push(`DataAreaId eq '${a.dataAreaId}'`);
-      return runQuery(client, "ProjectContracts", {
+      return runQuery(client, "ProjectContractHeaders", {
         filter: mergeFilters(...filters),
         top: a.top,
         crossCompany: !a.dataAreaId,
@@ -291,7 +291,7 @@ export async function handleProjectsTool(
       const a = QueryWBSSchema.parse(args);
       const filters: string[] = [`ProjectId eq '${a.projectId}'`];
       if (a.dataAreaId) filters.push(`DataAreaId eq '${a.dataAreaId}'`);
-      return runQuery(client, "ProjectWBSActivities", {
+      return runQuery(client, "ProjectWorkBreakdownStructureActivity", {
         filter: mergeFilters(...filters),
         top: a.top,
         crossCompany: !a.dataAreaId,

@@ -256,7 +256,7 @@ export async function handleHumanResourcesTool(
       if (a.personnelNumber) filters.push(`PersonnelNumber eq '${a.personnelNumber}'`);
       if (a.planId) filters.push(`CompensationPlanId eq '${a.planId}'`);
       if (a.companyId) filters.push(`DataAreaId eq '${a.companyId}'`);
-      return runQuery(client, "FixedCompensationEmployees", {
+      return runQuery(client, "HcmEmployeeFixedCompensationV2", {
         filter: mergeFilters(...filters),
         top: a.top,
         crossCompany: !a.companyId,

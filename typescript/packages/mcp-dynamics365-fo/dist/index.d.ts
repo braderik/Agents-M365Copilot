@@ -3,22 +3,22 @@
  * MCP CoPilot Agent – Dynamics 365 Finance & Operations
  * ======================================================
  *
- * A robust Model Context Protocol (MCP) server that plugs into
- * Dynamics 365 F&O and exposes its data to any MCP-compatible
- * Copilot client (Claude, GitHub Copilot, VS Code, etc.).
+ * Transport: stdio (default) or SSE (set D365_SSE_PORT=<port>)
  *
- * Modules covered:
- *  • General Ledger / Finance (chart of accounts, journals, trial balance, budget)
- *  • Accounts Payable (vendors, invoices, payments, aging)
- *  • Accounts Receivable (customers, invoices, aging, collections)
- *  • Inventory (items, on-hand, warehouses, movements, transfer orders)
- *  • Procurement (POs, requisitions, RFQs, receipts, vendor catalog)
- *  • Sales (sales orders, quotations, price lists)
- *  • Human Resources (workers, departments, positions, leave, compensation)
- *  • Project Management (projects, transactions, timesheets, expenses)
- *  • Advanced / Generic (query any entity, batch queries, auto-pagination)
- *
- * Transport: stdio (default) or SSE via D365_TRANSPORT=sse
+ * 56 MCP tools spanning:
+ *  • General Ledger / Finance
+ *  • Accounts Payable
+ *  • Accounts Receivable
+ *  • Inventory Management
+ *  • Procurement & Supply Chain
+ *  • Sales & Marketing
+ *  • Human Resources
+ *  • Project Management
+ *  • CRUD operations (create / update / delete)
+ *  • OData Actions & JSON Services
+ *  • Metadata discovery (entity search, schema, FTS, labels)
+ *  • SRS Report downloads
+ *  • Advanced generic queries (batch, fetch-all, count)
  */
 import "dotenv/config";
 //# sourceMappingURL=index.d.ts.map

@@ -170,7 +170,7 @@ export async function handleAccountsReceivableTool(
       if (a.creditLimitMin !== undefined) filters.push(`CreditLimit ge ${a.creditLimitMin}`);
       if (a.creditLimitMax !== undefined) filters.push(`CreditLimit le ${a.creditLimitMax}`);
       if (a.dataAreaId) filters.push(`DataAreaId eq '${a.dataAreaId}'`);
-      return runQuery(client, "Customers", {
+      return runQuery(client, "CustomersV3", {
         filter: mergeFilters(...filters),
         select: a.select,
         top: a.top,
@@ -182,8 +182,8 @@ export async function handleAccountsReceivableTool(
       const a = GetCustomerSchema.parse(args);
       try {
         const key: Record<string, string> = { CustomerAccountNumber: a.accountNumber };
-        if (a.dataAreaId) key.DataAreaId = a.dataAreaId;
-        const result = await client.getByKey("Customers", key);
+        if (a.dataAreaId) key.dataAreaId = a.dataAreaId;
+        const result = await client.getByKey("CustomersV3", key);
         return { type: "text", text: JSON.stringify(result, null, 2) };
       } catch (err) {
         return { type: "text", text: `Error: ${DynamicsClient.formatError(err)}` };
@@ -200,7 +200,7 @@ export async function handleAccountsReceivableTool(
       if (a.dateTo) filters.push(`InvoiceDate le ${a.dateTo}`);
       if (a.amountMin !== undefined) filters.push(`InvoiceAmount ge ${a.amountMin}`);
       if (a.dataAreaId) filters.push(`DataAreaId eq '${a.dataAreaId}'`);
-      return runQuery(client, "SalesInvoiceHeaders", {
+      return runQuery(client, "SalesInvoiceHeadersV2", {
         filter: mergeFilters(...filters),
         select: a.select,
         top: a.top,
@@ -214,7 +214,7 @@ export async function handleAccountsReceivableTool(
       if (a.customerAccount) filters.push(`AccountDisplayValue eq '${a.customerAccount}'`);
       if (a.dueDateBefore) filters.push(`DueDate le ${a.dueDateBefore}`);
       if (a.dataAreaId) filters.push(`DataAreaId eq '${a.dataAreaId}'`);
-      return runQuery(client, "CustomerTransactions", {
+      return runQuery(client, "CustInvoiceJourBiEntities", {
         filter: mergeFilters(...filters),
         top: a.top,
         crossCompany: !a.dataAreaId,

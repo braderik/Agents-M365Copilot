@@ -142,6 +142,8 @@ export function createAuthProviderFromEnv(): { provider: DynamicsAuthProvider; c
     defaultCompany,
     timeoutMs: parseInt(process.env.D365_TIMEOUT_MS ?? "30000", 10),
     maxRetries: parseInt(process.env.D365_MAX_RETRIES ?? "3", 10),
+    metadataCacheDir: process.env.D365_METADATA_CACHE_DIR,
+    ssePort: process.env.D365_SSE_PORT ? parseInt(process.env.D365_SSE_PORT, 10) : undefined,
   };
 
   const mode = (process.env.D365_AUTH_MODE as AuthMode | undefined) ?? "clientSecret";

@@ -206,7 +206,7 @@ export async function handleProcurementTool(name, args, client) {
                 filters.push(`TotalInvoiceAmount ge ${a.amountMin}`);
             if (a.dataAreaId)
                 filters.push(`DataAreaId eq '${a.dataAreaId}'`);
-            return runQuery(client, "PurchaseOrderHeaders", {
+            return runQuery(client, "PurchaseOrderHeadersV2", {
                 filter: mergeFilters(...filters),
                 select: a.select,
                 expand: a.expand,
@@ -219,9 +219,9 @@ export async function handleProcurementTool(name, args, client) {
             try {
                 const key = { PurchaseOrderNumber: a.poNumber };
                 if (a.dataAreaId)
-                    key.DataAreaId = a.dataAreaId;
+                    key.dataAreaId = a.dataAreaId;
                 const expand = a.includeLines ? "PurchaseOrderLines" : undefined;
-                const result = await client.getByKey("PurchaseOrderHeaders", key, { expand });
+                const result = await client.getByKey("PurchaseOrderHeadersV2", key, { expand });
                 return { type: "text", text: JSON.stringify(result, null, 2) };
             }
             catch (err) {
@@ -322,7 +322,7 @@ export async function handleProcurementTool(name, args, client) {
                 filters.push(`ProductReceiptDate le ${a.dateTo}`);
             if (a.dataAreaId)
                 filters.push(`DataAreaId eq '${a.dataAreaId}'`);
-            return runQuery(client, "VendorProductReceiptHeaders", {
+            return runQuery(client, "PurchaseOrderProductReceiptHeaders", {
                 filter: mergeFilters(...filters),
                 top: a.top,
                 crossCompany: !a.dataAreaId,

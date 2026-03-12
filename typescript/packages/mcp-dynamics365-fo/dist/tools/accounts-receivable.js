@@ -160,7 +160,7 @@ export async function handleAccountsReceivableTool(name, args, client) {
                 filters.push(`CreditLimit le ${a.creditLimitMax}`);
             if (a.dataAreaId)
                 filters.push(`DataAreaId eq '${a.dataAreaId}'`);
-            return runQuery(client, "Customers", {
+            return runQuery(client, "CustomersV3", {
                 filter: mergeFilters(...filters),
                 select: a.select,
                 top: a.top,
@@ -172,8 +172,8 @@ export async function handleAccountsReceivableTool(name, args, client) {
             try {
                 const key = { CustomerAccountNumber: a.accountNumber };
                 if (a.dataAreaId)
-                    key.DataAreaId = a.dataAreaId;
-                const result = await client.getByKey("Customers", key);
+                    key.dataAreaId = a.dataAreaId;
+                const result = await client.getByKey("CustomersV3", key);
                 return { type: "text", text: JSON.stringify(result, null, 2) };
             }
             catch (err) {
@@ -197,7 +197,7 @@ export async function handleAccountsReceivableTool(name, args, client) {
                 filters.push(`InvoiceAmount ge ${a.amountMin}`);
             if (a.dataAreaId)
                 filters.push(`DataAreaId eq '${a.dataAreaId}'`);
-            return runQuery(client, "SalesInvoiceHeaders", {
+            return runQuery(client, "SalesInvoiceHeadersV2", {
                 filter: mergeFilters(...filters),
                 select: a.select,
                 top: a.top,
@@ -213,7 +213,7 @@ export async function handleAccountsReceivableTool(name, args, client) {
                 filters.push(`DueDate le ${a.dueDateBefore}`);
             if (a.dataAreaId)
                 filters.push(`DataAreaId eq '${a.dataAreaId}'`);
-            return runQuery(client, "CustomerTransactions", {
+            return runQuery(client, "CustInvoiceJourBiEntities", {
                 filter: mergeFilters(...filters),
                 top: a.top,
                 crossCompany: !a.dataAreaId,

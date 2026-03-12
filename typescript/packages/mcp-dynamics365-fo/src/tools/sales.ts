@@ -169,7 +169,7 @@ export async function handleSalesTool(
       if (a.amountMin !== undefined) filters.push(`OrderTotalAmount ge ${a.amountMin}`);
       if (a.salesPersonnel) filters.push(`SalesPersonnelNumber eq '${a.salesPersonnel}'`);
       if (a.dataAreaId) filters.push(`DataAreaId eq '${a.dataAreaId}'`);
-      return runQuery(client, "SalesOrderHeaders", {
+      return runQuery(client, "SalesOrderHeadersV2", {
         filter: mergeFilters(...filters),
         select: a.select,
         expand: a.expand,
@@ -182,9 +182,9 @@ export async function handleSalesTool(
       const a = GetSOSchema.parse(args);
       try {
         const key: Record<string, string> = { SalesOrderNumber: a.orderNumber };
-        if (a.dataAreaId) key.DataAreaId = a.dataAreaId;
+        if (a.dataAreaId) key.dataAreaId = a.dataAreaId;
         const expand = a.includeLines ? "SalesOrderLines" : undefined;
-        const result = await client.getByKey("SalesOrderHeaders", key, { expand });
+        const result = await client.getByKey("SalesOrderHeadersV2", key, { expand });
         return { type: "text", text: JSON.stringify(result, null, 2) };
       } catch (err) {
         return { type: "text", text: `Error: ${DynamicsClient.formatError(err)}` };
@@ -216,7 +216,7 @@ export async function handleSalesTool(
       if (a.status) filters.push(`QuotationStatus eq '${a.status}'`);
       if (a.expiryDateBefore) filters.push(`ExpiryDate le ${a.expiryDateBefore}`);
       if (a.dataAreaId) filters.push(`DataAreaId eq '${a.dataAreaId}'`);
-      return runQuery(client, "SalesQuotationHeaders", {
+      return runQuery(client, "SalesQuotationHeadersV2", {
         filter: mergeFilters(...filters),
         top: a.top,
         crossCompany: !a.dataAreaId,

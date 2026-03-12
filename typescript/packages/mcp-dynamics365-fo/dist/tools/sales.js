@@ -161,7 +161,7 @@ export async function handleSalesTool(name, args, client) {
                 filters.push(`SalesPersonnelNumber eq '${a.salesPersonnel}'`);
             if (a.dataAreaId)
                 filters.push(`DataAreaId eq '${a.dataAreaId}'`);
-            return runQuery(client, "SalesOrderHeaders", {
+            return runQuery(client, "SalesOrderHeadersV2", {
                 filter: mergeFilters(...filters),
                 select: a.select,
                 expand: a.expand,
@@ -174,9 +174,9 @@ export async function handleSalesTool(name, args, client) {
             try {
                 const key = { SalesOrderNumber: a.orderNumber };
                 if (a.dataAreaId)
-                    key.DataAreaId = a.dataAreaId;
+                    key.dataAreaId = a.dataAreaId;
                 const expand = a.includeLines ? "SalesOrderLines" : undefined;
-                const result = await client.getByKey("SalesOrderHeaders", key, { expand });
+                const result = await client.getByKey("SalesOrderHeadersV2", key, { expand });
                 return { type: "text", text: JSON.stringify(result, null, 2) };
             }
             catch (err) {
@@ -218,7 +218,7 @@ export async function handleSalesTool(name, args, client) {
                 filters.push(`ExpiryDate le ${a.expiryDateBefore}`);
             if (a.dataAreaId)
                 filters.push(`DataAreaId eq '${a.dataAreaId}'`);
-            return runQuery(client, "SalesQuotationHeaders", {
+            return runQuery(client, "SalesQuotationHeadersV2", {
                 filter: mergeFilters(...filters),
                 top: a.top,
                 crossCompany: !a.dataAreaId,

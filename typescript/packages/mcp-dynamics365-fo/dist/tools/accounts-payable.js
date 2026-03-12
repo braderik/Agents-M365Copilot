@@ -143,7 +143,7 @@ export async function handleAccountsPayableTool(name, args, client) {
                 filters.push(`OnHoldStatus ne 'NoHold'`);
             if (a.dataAreaId)
                 filters.push(`DataAreaId eq '${a.dataAreaId}'`);
-            return runQuery(client, "Vendors", {
+            return runQuery(client, "VendorsV2", {
                 filter: mergeFilters(...filters),
                 select: a.select,
                 top: a.top,
@@ -155,8 +155,8 @@ export async function handleAccountsPayableTool(name, args, client) {
             try {
                 const key = { VendorAccountNumber: a.accountNumber };
                 if (a.dataAreaId)
-                    key.DataAreaId = a.dataAreaId;
-                const result = await client.getByKey("Vendors", key);
+                    key.dataAreaId = a.dataAreaId;
+                const result = await client.getByKey("VendorsV2", key);
                 return { type: "text", text: JSON.stringify(result, null, 2) };
             }
             catch (err) {
@@ -182,7 +182,7 @@ export async function handleAccountsPayableTool(name, args, client) {
                 filters.push(`DueDate le ${a.dueDateTo}`);
             if (a.dataAreaId)
                 filters.push(`DataAreaId eq '${a.dataAreaId}'`);
-            return runQuery(client, "VendorInvoiceHeaders", {
+            return runQuery(client, "VendorInvoiceHeadersV2", {
                 filter: mergeFilters(...filters),
                 select: a.select,
                 top: a.top,

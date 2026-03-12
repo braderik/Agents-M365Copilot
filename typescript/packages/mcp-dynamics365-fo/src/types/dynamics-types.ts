@@ -19,6 +19,10 @@ export interface D365Config {
   timeoutMs?: number;
   /** Max retries on transient errors (default 3) */
   maxRetries?: number;
+  /** Path to SQLite metadata cache directory */
+  metadataCacheDir?: string;
+  /** Port to run SSE transport on (optional) */
+  ssePort?: number;
 }
 
 // ─── OData primitives ─────────────────────────────────────────────────────────
@@ -28,11 +32,6 @@ export interface ODataResponse<T> {
   "@odata.count"?: number;
   "@odata.nextLink"?: string;
   value: T[];
-}
-
-export interface ODataSingleResponse<T> extends Omit<ODataResponse<T>, "value"> {
-  value?: never;
-  [key: string]: unknown;
 }
 
 export interface QueryOptions {
@@ -52,356 +51,58 @@ export interface QueryOptions {
   crossCompany?: boolean;
   /** Legal entity override */
   dataAreaId?: string;
+  /** OData $search – full-text search */
+  search?: string;
 }
 
 export interface BatchQueryOptions extends QueryOptions {
-  /** Entity set name, e.g. "SalesOrderHeaders" */
+  /** Entity set name, e.g. "SalesOrderHeadersV2" */
   entitySet: string;
 }
 
-// ─── Finance & General Ledger ─────────────────────────────────────────────────
+// ─── OData type mapping ───────────────────────────────────────────────────────
 
-export interface LedgerAccount {
-  MainAccountId: string;
-  Name: string;
-  Type: string;
-  AccountType: string;
-  IsBlocked: boolean;
-  DefaultCurrency: string;
-  Description: string;
+export type ODataKeyType = "string" | "int32" | "int64" | "decimal" | "guid" | "boolean" | "date" | "datetime";
+
+export interface EntityKeyField {
+  name: string;
+  type: ODataKeyType;
 }
 
-export interface JournalEntry {
-  JournalBatchNumber: string;
-  Voucher: string;
-  Date: string;
-  AccountType: string;
-  AccountDisplayValue: string;
-  Description: string;
-  CurrencyCode: string;
-  AmountCurrencyDebit: number;
-  AmountCurrencyCredit: number;
-  PostingLayer: string;
+// ─── CRUD operation types ─────────────────────────────────────────────────────
+
+export interface CreateEntityArgs {
+  entitySet: string;
+  data: Record<string, unknown>;
+  returnEntity?: boolean;
 }
 
-export interface TrialBalance {
-  MainAccountId: string;
-  Name: string;
-  OpeningBalance: number;
-  Debit: number;
-  Credit: number;
-  ClosingBalance: number;
-  CurrencyCode: string;
+export interface UpdateEntityArgs {
+  entitySet: string;
+  key: string | Record<string, string>;
+  data: Record<string, unknown>;
+  method?: "PATCH" | "PUT";
 }
 
-export interface FinancialDimension {
-  DimensionAttributeId: string;
-  Name: string;
-  Description: string;
-  Values: string[];
+export interface DeleteEntityArgs {
+  entitySet: string;
+  key: string | Record<string, string>;
 }
 
-// ─── Accounts Payable ─────────────────────────────────────────────────────────
-
-export interface Vendor {
-  VendorAccountNumber: string;
-  VendorName: string;
-  VendorGroupId: string;
-  CurrencyCode: string;
-  AddressCity: string;
-  AddressCountryRegionId: string;
-  Phone: string;
-  Email: string;
-  PaymentTermsName: string;
-  PaymentMethodName: string;
-  OnHoldStatus: string;
-  DataAreaId: string;
+export interface CallActionArgs {
+  actionName: string;
+  parameters?: Record<string, unknown>;
+  entitySet?: string;
+  entityKey?: string | Record<string, string>;
 }
 
-export interface VendorInvoice {
-  InvoiceNumber: string;
-  InvoiceDate: string;
-  DueDate: string;
-  VendorAccountNumber: string;
-  VendorName: string;
-  InvoiceAmount: number;
-  CurrencyCode: string;
-  PaymentStatus: string;
-  DataAreaId: string;
+export interface CallJsonServiceArgs {
+  servicePath: string;
+  method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
+  body?: Record<string, unknown>;
 }
 
-export interface VendorPayment {
-  JournalNumber: string;
-  VendorAccountNumber: string;
-  PaymentDate: string;
-  AmountPaid: number;
-  CurrencyCode: string;
-  PaymentMethod: string;
-  TransactionStatus: string;
-}
-
-// ─── Accounts Receivable ──────────────────────────────────────────────────────
-
-export interface Customer {
-  CustomerAccountNumber: string;
-  CustomerName: string;
-  CustomerGroupId: string;
-  CurrencyCode: string;
-  CreditLimit: number;
-  AddressCity: string;
-  AddressCountryRegionId: string;
-  Phone: string;
-  Email: string;
-  PaymentTermsName: string;
-  DataAreaId: string;
-}
-
-export interface CustomerInvoice {
-  InvoiceId: string;
-  InvoiceDate: string;
-  DueDate: string;
-  CustomerAccountNumber: string;
-  CustomerName: string;
-  InvoiceAmount: number;
-  RemainingAmount: number;
-  CurrencyCode: string;
-  PaymentStatus: string;
-  DataAreaId: string;
-}
-
-// ─── Inventory ────────────────────────────────────────────────────────────────
-
-export interface InventoryItem {
-  ItemNumber: string;
-  ProductName: string;
-  SearchName: string;
-  ItemType: string;
-  ProductType: string;
-  UnitId: string;
-  PurchaseUnitSymbol: string;
-  SalesUnitSymbol: string;
-  InventoryUnitSymbol: string;
-  PrimaryVendorAccountNumber: string;
-  DataAreaId: string;
-}
-
-export interface InventoryOnHand {
-  ItemNumber: string;
-  ProductName: string;
-  WarehouseId: string;
-  SiteId: string;
-  AvailableOrderedQuantity: number;
-  AvailablePhysicalQuantity: number;
-  PhysicalInventoryQuantity: number;
-  ReservedPhysicalQuantity: number;
-  UnitId: string;
-  DataAreaId: string;
-}
-
-export interface Warehouse {
-  WarehouseId: string;
-  WarehouseName: string;
-  SiteId: string;
-  WarehouseType: string;
-  IsDefaultReceiptWarehouse: boolean;
-  IsDefaultIssueWarehouse: boolean;
-  DataAreaId: string;
-}
-
-// ─── Purchase Orders ──────────────────────────────────────────────────────────
-
-export interface PurchaseOrder {
-  PurchaseOrderNumber: string;
-  VendorAccountNumber: string;
-  VendorName: string;
-  PurchaseOrderStatus: string;
-  DocumentDate: string;
-  DeliveryDate: string;
-  TotalInvoiceAmount: number;
-  CurrencyCode: string;
-  PurchaserPersonnelNumber: string;
-  DataAreaId: string;
-}
-
-export interface PurchaseOrderLine {
-  PurchaseOrderNumber: string;
-  LineNumber: number;
-  ItemNumber: string;
-  ProductName: string;
-  PurchaseQuantity: number;
-  PurchasePrice: number;
-  LineAmount: number;
-  CurrencyCode: string;
-  PurchaseUnitSymbol: string;
-  ReceivingWarehouseId: string;
-  ConfirmedDeliveryDate: string;
-  PurchaseOrderLineStatus: string;
-}
-
-export interface VendorPurchaseRequisition {
-  RequisitionNumber: string;
-  RequisitionStatus: string;
-  RequestDate: string;
-  RequiredDate: string;
-  RequestingWorkerName: string;
-  TotalAmount: number;
-  CurrencyCode: string;
-  DataAreaId: string;
-}
-
-// ─── Sales Orders ─────────────────────────────────────────────────────────────
-
-export interface SalesOrder {
-  SalesOrderNumber: string;
-  CustomerAccountNumber: string;
-  CustomerName: string;
-  SalesOrderStatus: string;
-  RequestedShippingDate: string;
-  OrderTotalAmount: number;
-  CurrencyCode: string;
-  SalesPersonnelNumber: string;
-  SiteId: string;
-  WarehouseId: string;
-  DataAreaId: string;
-}
-
-export interface SalesOrderLine {
-  SalesOrderNumber: string;
-  LineCreationSequenceNumber: number;
-  ItemNumber: string;
-  ProductName: string;
-  SalesQuantity: number;
-  SalesPrice: number;
-  LineAmount: number;
-  CurrencyCode: string;
-  SalesUnitSymbol: string;
-  ShippingWarehouseId: string;
-  RequestedShippingDate: string;
-  SalesOrderLineStatus: string;
-}
-
-export interface SalesQuotation {
-  QuotationId: string;
-  CustomerAccountNumber: string;
-  CustomerName: string;
-  QuotationStatus: string;
-  ExpiryDate: string;
-  TotalAmount: number;
-  CurrencyCode: string;
-  DataAreaId: string;
-}
-
-// ─── Fixed Assets ─────────────────────────────────────────────────────────────
-
-export interface FixedAsset {
-  FixedAssetNumber: string;
-  Name: string;
-  AssetGroupId: string;
-  AssetType: string;
-  AcquisitionDate: string;
-  AcquisitionPrice: number;
-  BookValue: number;
-  DepreciationMethod: string;
-  ServiceLife: number;
-  ResponsibleWorkerPersonnelNumber: string;
-  LocationId: string;
-  DataAreaId: string;
-}
-
-// ─── Projects ─────────────────────────────────────────────────────────────────
-
-export interface Project {
-  ProjectId: string;
-  Name: string;
-  Description: string;
-  ProjectType: string;
-  ProjectStatus: string;
-  CustomerAccountNumber: string;
-  StartDate: string;
-  EndDate: string;
-  ContractId: string;
-  ProjectManagerPersonnelNumber: string;
-  DataAreaId: string;
-}
-
-export interface ProjectTransaction {
-  ProjectId: string;
-  TransactionDate: string;
-  TransactionType: string;
-  WorkerPersonnelNumber: string;
-  CategoryId: string;
-  Quantity: number;
-  SalesAmount: number;
-  CostAmount: number;
-  CurrencyCode: string;
-}
-
-// ─── Human Resources ──────────────────────────────────────────────────────────
-
-export interface Worker {
-  PersonnelNumber: string;
-  Name: string;
-  WorkerType: string;
-  PrimaryDepartmentId: string;
-  PrimaryPositionId: string;
-  EmploymentStartDate: string;
-  EmploymentEndDate?: string;
-  CompanyId: string;
-}
-
-export interface Department {
-  DepartmentNumber: string;
-  Name: string;
-  ManagerPersonnelNumber: string;
-  OmOperatingUnitNumber: string;
-}
-
-export interface Position {
-  PositionId: string;
-  Description: string;
-  DepartmentNumber: string;
-  JobId: string;
-  WorkerAssignedPersonnelNumber?: string;
-  ActivationDate: string;
-  RetirementDate?: string;
-  FullTimeEquivalent: number;
-}
-
-// ─── Bank ─────────────────────────────────────────────────────────────────────
-
-export interface BankAccount {
-  BankAccountId: string;
-  Name: string;
-  BankAccountNumber: string;
-  IBAN: string;
-  CurrencyCode: string;
-  BankName: string;
-  BankGroupId: string;
-  DataAreaId: string;
-}
-
-export interface BankTransaction {
-  AccountNumber: string;
-  TransactionDate: string;
-  TransactionType: string;
-  DocumentNumber: string;
-  Description: string;
-  Amount: number;
-  CurrencyCode: string;
-}
-
-// ─── Tax ──────────────────────────────────────────────────────────────────────
-
-export interface SalesTaxCode {
-  TaxCode: string;
-  TaxName: string;
-  TaxType: string;
-  TaxRate: number;
-  SettlementPeriod: string;
-  DataAreaId: string;
-}
-
-// ─── Generic entity result ────────────────────────────────────────────────────
+// ─── Entity query result ──────────────────────────────────────────────────────
 
 export interface EntityQueryResult {
   entitySet: string;
@@ -410,7 +111,48 @@ export interface EntityQueryResult {
   nextLink?: string;
 }
 
-// ─── Tool argument schemas (used with Zod) ────────────────────────────────────
+// ─── Metadata types ───────────────────────────────────────────────────────────
+
+export interface EntitySetInfo {
+  name: string;
+  entityType?: string;
+  kind: "EntitySet" | "Singleton" | "FunctionImport" | "ActionImport";
+}
+
+export interface EntityProperty {
+  name: string;
+  type: string;
+  nullable: boolean;
+  isKey: boolean;
+  isMandatory?: boolean;
+  allowEdit?: boolean;
+  isReadOnly?: boolean;
+  isDimension?: boolean;
+  label?: string;
+}
+
+export interface EntitySchema {
+  entitySet: string;
+  entityType: string;
+  isReadOnly: boolean;
+  keys: EntityProperty[];
+  properties: EntityProperty[];
+  navigationProperties: string[];
+  actions: string[];
+  label?: string;
+  description?: string;
+}
+
+export interface ActionInfo {
+  name: string;
+  fullName: string;
+  isBound: boolean;
+  boundEntitySet?: string;
+  parameters: { name: string; type: string }[];
+  returnType?: string;
+}
+
+// ─── Generic query args ───────────────────────────────────────────────────────
 
 export interface QueryEntityArgs {
   entitySet: string;
@@ -422,6 +164,7 @@ export interface QueryEntityArgs {
   skip?: number;
   crossCompany?: boolean;
   dataAreaId?: string;
+  search?: string;
 }
 
 export interface GetByKeyArgs {
@@ -433,6 +176,14 @@ export interface GetByKeyArgs {
 
 export interface BatchRequestArgs {
   requests: BatchQueryOptions[];
+}
+
+// ─── Report args ──────────────────────────────────────────────────────────────
+
+export interface DownloadReportArgs {
+  reportName: string;
+  parameters?: Record<string, string>;
+  format?: "PDF" | "Excel" | "Word";
 }
 
 // ─── Error types ──────────────────────────────────────────────────────────────
