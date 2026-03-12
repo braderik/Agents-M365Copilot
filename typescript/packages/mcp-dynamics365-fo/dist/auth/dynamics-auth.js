@@ -34,14 +34,22 @@ export class DynamicsAuthProvider {
                     },
                 });
                 break;
-            case "certificate":
+            case "certificate": {
                 if (!options.certOptions?.certificatePath) {
                     throw new Error("Certificate path required for certificate auth mode");
                 }
-                this.credential = new ClientCertificateCredential(config.tenantId, config.clientId, options.certOptions.certificatePath, options.certOptions.certificatePassword
-                    ? { sendCertificateChain: true }
-                    : undefined);
+                // Bug 3 fix: use the ClientCertificatePEMCertificatePath configuration object
+                // so that certificatePassword is forwarded to the credential.
+                // Previously, the password was dropped because it was passed as a plain string path.
+                // certificatePassword lives on ClientCertificatePEMCertificatePath;
+                // sendCertificateChain goes in the options parameter
+                const certConfig = {
+                    certificatePath: options.certOptions.certificatePath,
+                    certificatePassword: options.certOptions.certificatePassword,
+                };
+                this.credential = new ClientCertificateCredential(config.tenantId, config.clientId, certConfig, { sendCertificateChain: true });
                 break;
+            }
             case "clientSecret":
             default:
                 // Try chained: client secret + managed identity fallback

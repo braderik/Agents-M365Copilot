@@ -116,21 +116,31 @@ export class DynamicsClient {
         const resp = await this.http.get(url);
         return resp.data;
     }
-    /** Auto-paginate through all pages up to FETCH_ALL_MAX_RECORDS. */
+    /**
+     * Auto-paginate through all pages.
+     *
+     * Bug fix: `options.top` is now treated as the **total** record cap, not the page size.
+     * Page size is capped separately at MAX_PAGE_SIZE. Pagination stops once `maxTotal` is
+     * reached (or there are no more pages), preventing unbounded memory usage.
+     */
     async fetchAll(entitySet, options = {}) {
+        const maxTotal = Math.min(options.top ?? FETCH_ALL_MAX_RECORDS, FETCH_ALL_MAX_RECORDS);
+        const pageSize = Math.min(DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE);
+        // Use pageSize for the actual HTTP request, ignore caller's top in the query
+        const pageOptions = { ...options, top: pageSize };
+        // Clear the caller's top so buildQueryUrl uses pageSize
+        delete pageOptions.top;
+        pageOptions.top = pageSize;
         const records = [];
-        const pageOptions = {
-            ...options,
-            top: Math.min(options.top ?? DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE),
-        };
         let url = this.buildQueryUrl(entitySet, pageOptions);
-        while (url && records.length < FETCH_ALL_MAX_RECORDS) {
+        while (url && records.length < maxTotal) {
             const resp = await this.http.get(url);
             const page = resp.data;
             records.push(...(page.value ?? []));
-            url = page["@odata.nextLink"];
+            url = records.length < maxTotal ? page["@odata.nextLink"] : undefined;
         }
-        return records;
+        // Trim to exactly maxTotal if the last page over-delivered
+        return records.slice(0, maxTotal);
     }
     /**
      * Fetch a single entity by OData key.
@@ -322,32 +332,49 @@ export class DynamicsClient {
         return this.parseBatchResponse(resp.data, requests);
     }
     // ─── URL builder ──────────────────────────────────────────────────────────
+    /**
+     * Build the OData query URL for an entity set.
+     *
+     * Bug fixes:
+     *  - Bug 1: dataAreaId is merged into the existing $filter as a single expression.
+     *           Only one $filter parameter is ever emitted.
+     *  - Bug 4: $select and $expand are URL-encoded via URLSearchParams to prevent
+     *           parameter injection through embedded '&' or '=' characters.
+     */
     buildQueryUrl(entitySet, options) {
-        const params = [];
-        const filter = options.filter;
-        if (filter)
-            params.push(`$filter=${encodeURIComponent(filter)}`);
+        // ── Bug 1 fix: merge dataAreaId into one $filter expression ──────────────
+        const parts = [];
+        if (options.filter)
+            parts.push(options.filter);
+        if (options.dataAreaId)
+            parts.push(`dataAreaId eq '${options.dataAreaId}'`);
+        const mergedFilter = parts.join(" and ");
+        // Use URLSearchParams to guarantee correct encoding for all values (Bug 4 fix)
+        const qs = new URLSearchParams();
+        if (mergedFilter)
+            qs.set("$filter", mergedFilter);
+        // Bug 4 fix: $select and $expand are now encoded by URLSearchParams
         const select = Array.isArray(options.select) ? options.select.join(",") : options.select;
         if (select)
-            params.push(`$select=${select}`);
+            qs.set("$select", select);
         const expand = Array.isArray(options.expand) ? options.expand.join(",") : options.expand;
         if (expand)
-            params.push(`$expand=${expand}`);
+            qs.set("$expand", expand);
         if (options.orderBy)
-            params.push(`$orderby=${encodeURIComponent(options.orderBy)}`);
+            qs.set("$orderby", options.orderBy);
         if (options.search)
-            params.push(`$search=${encodeURIComponent(options.search)}`);
-        params.push(`$top=${Math.min(options.top ?? DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE)}`);
+            qs.set("$search", options.search);
+        qs.set("$top", String(Math.min(options.top ?? DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE)));
         if (options.skip && options.skip > 0)
-            params.push(`$skip=${options.skip}`);
-        params.push("$count=true");
-        // Auto cross-company: explicit flag OR dataAreaId filter/param
+            qs.set("$skip", String(options.skip));
+        qs.set("$count", "true");
+        // Auto cross-company: explicit flag OR dataAreaId present in either source
         const needsXC = options.crossCompany ||
             !!options.dataAreaId ||
-            filterNeedsCrossCompany(filter);
+            filterNeedsCrossCompany(options.filter);
         if (needsXC)
-            params.push("cross-company=true");
-        return `${entitySet}?${params.join("&")}`;
+            qs.set("cross-company", "true");
+        return `${entitySet}?${qs.toString()}`;
     }
     parseBatchResponse(raw, requests) {
         const results = [];

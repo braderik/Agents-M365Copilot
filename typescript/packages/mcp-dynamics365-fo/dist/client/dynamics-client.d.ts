@@ -26,7 +26,13 @@ export declare class DynamicsClient {
     constructor(config: D365Config, auth: DynamicsAuthProvider);
     /** Query an entity set and return the raw OData response. */
     query<T = Record<string, unknown>>(entitySet: string, options?: QueryOptions): Promise<ODataResponse<T>>;
-    /** Auto-paginate through all pages up to FETCH_ALL_MAX_RECORDS. */
+    /**
+     * Auto-paginate through all pages.
+     *
+     * Bug fix: `options.top` is now treated as the **total** record cap, not the page size.
+     * Page size is capped separately at MAX_PAGE_SIZE. Pagination stops once `maxTotal` is
+     * reached (or there are no more pages), preventing unbounded memory usage.
+     */
     fetchAll<T = Record<string, unknown>>(entitySet: string, options?: QueryOptions): Promise<T[]>;
     /**
      * Fetch a single entity by OData key.
@@ -80,6 +86,15 @@ export declare class DynamicsClient {
     }>;
     /** Execute multiple queries in a single OData $batch round-trip. */
     batchQuery(requests: BatchQueryOptions[]): Promise<EntityQueryResult[]>;
+    /**
+     * Build the OData query URL for an entity set.
+     *
+     * Bug fixes:
+     *  - Bug 1: dataAreaId is merged into the existing $filter as a single expression.
+     *           Only one $filter parameter is ever emitted.
+     *  - Bug 4: $select and $expand are URL-encoded via URLSearchParams to prevent
+     *           parameter injection through embedded '&' or '=' characters.
+     */
     private buildQueryUrl;
     private parseBatchResponse;
     static formatError(error: unknown): string;
