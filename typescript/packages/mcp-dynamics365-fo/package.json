@@ -1,0 +1,46 @@
+{
+  "name": "@microsoft/mcp-dynamics365-fo",
+  "version": "1.0.0",
+  "description": "MCP (Model Context Protocol) server for Dynamics 365 Finance & Operations - robust Copilot agent with full data access capabilities",
+  "author": "Microsoft",
+  "license": "MIT",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "mcp-dynamics365-fo": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc && tsc-alias",
+    "clean": "rimraf dist",
+    "start": "node dist/index.js",
+    "dev": "tsx watch src/index.ts",
+    "lint": "eslint src/**/*.ts",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@azure/identity": "^4.4.1",
+    "@modelcontextprotocol/sdk": "^1.0.4",
+    "axios": "^1.7.7",
+    "axios-retry": "^4.5.0",
+    "dotenv": "^16.4.5",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "rimraf": "^6.0.0",
+    "tsc-alias": "^1.8.10",
+    "tsx": "^4.19.0",
+    "typescript": "^5.3.3",
+    "vitest": "^3.0.0"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "dynamics365",
+    "finance-operations",
+    "f&o",
+    "copilot",
+    "microsoft",
+    "azure"
+  ]
+}
